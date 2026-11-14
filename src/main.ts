@@ -1,60 +1,154 @@
-import './style.css'
-import heroImg from './assets/hero.png'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.ts'
 
+import './style.css';
+
+// Estrutura da aplicação
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+  <main class="container">
+    <header>
+      <h1>Triângulo de Sierpinski</h1>
+      <p>Explore a construção de um fractal utilizando recursividade.</p>
+    </header>
 
-<div class="ticks"></div>
+    <section class="controls">
+      <label for="nivel">Nível de recursividade:</label>
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+      <input
+        type="number"
+        id="nivel"
+        min="0"
+        max="8"
+        value="0"
+      />
+    </section>
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+    <section class="visualizacao">
+      <canvas id="canvas"></canvas>
+    </section>
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+    <p id="informacao">Nível atual: 0</p>
+  </main>
+`;
+
+const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+const ctx = canvas.getContext('2d')!;
+const input = document.querySelector<HTMLInputElement>('#nivel')!;
+const informacao = document.querySelector<HTMLParagraphElement>('#informacao')!;
+
+// Representação de um ponto no plano
+interface Ponto {
+  x: number;
+  y: number;
+}
+
+// Calcula o ponto médio entre dois vértices
+function pontoMedio(a: Ponto, b: Ponto): Ponto {
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2
+  };
+}
+
+// Desenha o triângulo utilizando recursividade
+function desenharTriangulo(
+  a: Ponto,
+  b: Ponto,
+  c: Ponto,
+  nivel: number
+): void {
+
+  // Caso base: desenha o triângulo quando chega ao nível zero
+  if (nivel === 0) {
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(c.x, c.y);
+    ctx.closePath();
+
+    ctx.fillStyle = '#2563eb';
+    ctx.fill();
+
+    return;
+  }
+
+  // Calcula os pontos médios dos lados
+  const ab = pontoMedio(a, b);
+  const ac = pontoMedio(a, c);
+  const bc = pontoMedio(b, c);
+
+  // Chamadas recursivas para os três triângulos externos
+  desenharTriangulo(a, ab, ac, nivel - 1);
+  desenharTriangulo(ab, b, bc, nivel - 1);
+  desenharTriangulo(ac, bc, c, nivel - 1);
+}
+
+// Ajusta o tamanho do Canvas
+function ajustarCanvas(): void {
+  const largura = canvas.clientWidth;
+  const altura = canvas.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = largura * dpr;
+  canvas.height = altura * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  desenhar();
+}
+
+// Desenha o fractal
+function desenhar(): void {
+  const nivel = Number(input.value);
+
+  const largura = canvas.clientWidth;
+  const altura = canvas.clientHeight;
+
+  // Limpa o desenho anterior
+  ctx.clearRect(0, 0, largura, altura);
+
+  // Define o tamanho do triângulo
+  const tamanho = Math.min(largura * 0.85, altura * 0.85);
+  const alturaTriangulo = tamanho * Math.sqrt(3) / 2;
+
+  // Define os três vértices do triângulo principal
+  const a = {
+    x: largura / 2,
+    y: (altura - alturaTriangulo) / 2
+  };
+
+  const b = {
+    x: largura / 2 - tamanho / 2,
+    y: (altura + alturaTriangulo) / 2
+  };
+
+  const c = {
+    x: largura / 2 + tamanho / 2,
+    y: (altura + alturaTriangulo) / 2
+  };
+
+  // Inicia a recursividade
+  desenharTriangulo(a, b, c, nivel);
+
+  informacao.textContent =
+    `Nível atual: ${nivel} | Triângulos: ${Math.pow(3, nivel)}`;
+}
+
+// Atualiza automaticamente quando o valor muda
+input.addEventListener('input', () => {
+  let nivel = Number(input.value);
+
+  if (!Number.isFinite(nivel)) {
+    return;
+  }
+
+  nivel = Math.max(0, Math.min(8, Math.floor(nivel)));
+
+  input.value = String(nivel);
+
+  desenhar();
+});
+
+// Redesenha quando a janela muda de tamanho
+window.addEventListener('resize', ajustarCanvas);
+
+// Inicialização
+ajustarCanvas();
