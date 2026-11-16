@@ -48,15 +48,48 @@ function pontoMedio(a: Ponto, b: Ponto): Ponto {
   };
 }
 
+// Interpola duas cores utilizando RGB
+function interpolarCor(
+  corInicial: string,
+  corFinal: string,
+  fator: number
+): string {
+
+  // Converte hexadecimal para RGB
+  const converterRGB = (cor: string) => {
+    const valor = cor.replace('#', '');
+
+    return {
+      r: parseInt(valor.substring(0, 2), 16),
+      g: parseInt(valor.substring(2, 4), 16),
+      b: parseInt(valor.substring(4, 6), 16)
+    };
+  };
+
+  const inicio = converterRGB(corInicial);
+  const fim = converterRGB(corFinal);
+
+  // Calcula a interpolação de cada componente
+  const r = Math.round(inicio.r + (fim.r - inicio.r) * fator);
+  const g = Math.round(inicio.g + (fim.g - inicio.g) * fator);
+  const b = Math.round(inicio.b + (fim.b - inicio.b) * fator);
+
+  // Retorna a cor em hexadecimal
+  return `#${[r, g, b]
+    .map(valor => valor.toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
 // Desenha o triângulo utilizando recursividade
 function desenharTriangulo(
   a: Ponto,
   b: Ponto,
   c: Ponto,
-  nivel: number
+  nivel: number,
+  cor: string
 ): void {
 
-  // Caso base: desenha o triângulo quando chega ao nível zero
+  // Caso base
   if (nivel === 0) {
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
@@ -64,21 +97,21 @@ function desenharTriangulo(
     ctx.lineTo(c.x, c.y);
     ctx.closePath();
 
-    ctx.fillStyle = '#2563eb';
+    ctx.fillStyle = cor;
     ctx.fill();
 
     return;
   }
 
-  // Calcula os pontos médios dos lados
+  // Calcula os pontos médios
   const ab = pontoMedio(a, b);
   const ac = pontoMedio(a, c);
   const bc = pontoMedio(b, c);
 
-  // Chamadas recursivas para os três triângulos externos
-  desenharTriangulo(a, ab, ac, nivel - 1);
-  desenharTriangulo(ab, b, bc, nivel - 1);
-  desenharTriangulo(ac, bc, c, nivel - 1);
+  // Chamadas recursivas
+  desenharTriangulo(a, ab, ac, nivel - 1, cor);
+  desenharTriangulo(ab, b, bc, nivel - 1, cor);
+  desenharTriangulo(ac, bc, c, nivel - 1, cor);
 }
 
 // Ajusta o tamanho do Canvas
@@ -126,7 +159,22 @@ function desenhar(): void {
   };
 
   // Inicia a recursividade
-  desenharTriangulo(a, b, c, nivel);
+ // Define as cores inicial e final
+  const corInicial = '#2563eb';
+  const corFinal = '#ec4899';
+
+  // Calcula o progresso da interpolação
+  const progresso = nivel / 8;
+
+  // Obtém a cor correspondente ao nível
+  const corAtual = interpolarCor(
+    corInicial,
+    corFinal,
+    progresso
+  );
+
+// Desenha o fractal utilizando a cor interpolada
+desenharTriangulo(a, b, c, nivel, corAtual);
 
   informacao.textContent =
     `Nível atual: ${nivel} | Triângulos: ${Math.pow(3, nivel)}`;
